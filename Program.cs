@@ -15,7 +15,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<CatsDbContext>(options =>
  options.UseSqlServer(builder.Configuration.GetConnectionString("CatsAPIConnectionString")));
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddScoped<ICatService, SqlCatService>();
+builder.Services.AddScoped<ICatApiService, SqlCatApiService>();
 
 builder.Services.AddAutoMapper(cfg => {},typeof(AutoMapperProfiles));
 

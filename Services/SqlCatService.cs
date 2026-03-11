@@ -7,10 +7,77 @@ namespace CatsAPI.Services
     public class SqlCatService : ICatService
     {
         private readonly CatsDbContext dbContext;
+        private readonly ICatApiService catApiService;
 
-        public SqlCatService(CatsDbContext dbContext)
+        public SqlCatService(CatsDbContext dbContext, ICatApiService catApiService)
         {
             this.dbContext = dbContext;
+            this.catApiService = catApiService;
+        }
+
+        public async Task<int> FetchAndSaveCatsAsync()
+        {
+
+            var catApiResponses = await catApiService.FetchCatsFromApiAsync(25);
+
+            var savedCount = 0;
+
+            foreach (var apiCat in catApiResponses)
+            {
+                var existingCat = await dbContext.Cats
+                    .FirstOrDefaultAsync(c => c.CatId == apiCat.Id);
+
+                if (existingCat != null)
+                {
+                    continue;
+                }
+
+                var newCat = new Cat
+                {
+                    CatId = apiCat.Id,
+                    Image = apiCat.Url,
+                    Width = apiCat.Width,
+                    Height = apiCat.Height,
+                    Created = DateTime.UtcNow
+                };
+
+                if (apiCat.Breeds != null && apiCat.Breeds.Any())
+                {
+                    var temperament = apiCat.Breeds[0].Temperament;
+
+                    if (!string.IsNullOrWhiteSpace(temperament))
+                    {
+                        var tagNames = temperament
+                            .Split(',')
+                            .Select(t => t.Trim())
+                            .Where(t => !string.IsNullOrWhiteSpace(t))
+                            .ToList();
+
+                        foreach (var tagName in tagNames)
+                        {
+                            var existingTag = await dbContext.Tags
+                                .FirstOrDefaultAsync(t => t.Name == tagName);
+
+                            if (existingTag == null)
+                            {
+                                existingTag = new Tag
+                                {
+                                    Name = tagName,
+                                    Created = DateTime.UtcNow
+                                };
+                                dbContext.Tags.Add(existingTag);
+                            }
+
+                            newCat.Tags.Add(existingTag);
+                        }
+                    }
+                }
+
+                dbContext.Cats.Add(newCat);
+                savedCount++;
+            }
+            await dbContext.SaveChangesAsync();
+            return savedCount;
         }
 
         public async Task<List<Cat>> GetAllAsync(int pageNumber, int pageSize)
@@ -18,6 +85,7 @@ namespace CatsAPI.Services
             var skipResults = (pageNumber - 1) * pageSize;
             
             return await dbContext.Cats
+                .Include(c => c.Tags)
                 .Skip(skipResults)
                 .Take(pageSize)
                 .ToListAsync();
@@ -30,9 +98,16 @@ namespace CatsAPI.Services
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public Task<List<Cat>> GetByTagAsync(string tag, int pageNumber, int pageSize)
+        public async Task<List<Cat>> GetByTagAsync(string tag, int pageNumber, int pageSize)
         {
-            throw new NotImplementedException();
+            var skipResults = (pageNumber - 1) * pageSize;
+
+            return await dbContext.Cats
+                .Include(c => c.Tags)
+                .Where(c => c.Tags.Any(t => t.Name.ToLower() == tag.ToLower()))
+                .Skip(skipResults)
+                .Take(pageSize)
+                .ToListAsync();
         }
     }
 }

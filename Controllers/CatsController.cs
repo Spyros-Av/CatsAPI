@@ -42,7 +42,7 @@ namespace CatsAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById([FromRoute]int id)
+        public async Task<IActionResult> GetByIdAsync([FromRoute]int id)
         {
             var catEntity = await catService.GetByIdAsync(id);
 
@@ -51,6 +51,33 @@ namespace CatsAPI.Controllers
                 return NotFound();
             }
             return Ok(mapper.Map<CatDto>(catEntity));
+        }
+
+        [HttpPost("fetch")]
+        public async Task<IActionResult> FetchAsync()
+        {
+            try
+            {
+                var savedCats = await catService.FetchAndSaveCatsAsync();
+
+            return CreatedAtAction(
+                nameof(GetAll),
+                new
+                {
+                    success = true,
+                    message = "Cats fetched successfully",
+                    newCatsAdded = savedCats
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error fetching cats",
+                    error = ex.Message
+                });
+            }
         }
     }
 }
