@@ -1,4 +1,6 @@
 using CatsAPI.Data;
+using CatsAPI.Mappings;
+using CatsAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +14,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<CatsDbContext>(options =>
  options.UseSqlServer(builder.Configuration.GetConnectionString("CatsAPIConnectionString")));
+
+builder.Services.AddScoped<ICatService, SqlCatService>();
+
+builder.Services.AddAutoMapper(cfg => {},typeof(AutoMapperProfiles));
 
 var app = builder.Build();
 

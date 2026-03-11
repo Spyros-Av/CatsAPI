@@ -10,14 +10,14 @@ namespace CatsAPI.Data
             
         }
 
-        public DbSet<CatEntity> Cats { get; set; }
-        public DbSet<TagEntity> Tags { get; set; }
+        public DbSet<Cat> Cats { get; set; }
+        public DbSet<Tag> Tags { get; set; }
 
        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<CatEntity>(entity =>
+            modelBuilder.Entity<Cat>(entity =>
             {
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.CatId).IsRequired().HasMaxLength(100);
@@ -28,7 +28,7 @@ namespace CatsAPI.Data
                 entity.Property(c => c.Created).HasDefaultValueSql("GETDATE()");
             });
 
-            modelBuilder.Entity<TagEntity>(entity =>
+            modelBuilder.Entity<Tag>(entity =>
             {
                 entity.HasKey(t => t.Id);
                 entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
@@ -36,7 +36,7 @@ namespace CatsAPI.Data
             });
 
 
-            modelBuilder.Entity<CatEntity>(entity => 
+            modelBuilder.Entity<Cat>(entity => 
             {
                 entity.HasMany(c => c.Tags)
                       .WithMany(t => t.Cats)
