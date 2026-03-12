@@ -1,3 +1,4 @@
 <Solution>
-  <Project Path="CatsAPI/CatsAPI.csproj" />
+  <Project Path="CatsAPI.csproj" />
 </Solution>
+
