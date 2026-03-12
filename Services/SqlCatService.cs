@@ -22,10 +22,10 @@ namespace CatsAPI.Services
 
             var savedCount = 0;
 
-            foreach (var apiCat in catApiResponses)
+            foreach (var cat in catApiResponses)
             {
                 var existingCat = await dbContext.Cats
-                    .FirstOrDefaultAsync(c => c.CatId == apiCat.Id);
+                    .FirstOrDefaultAsync(c => c.CatId == cat.Id);
 
                 if (existingCat != null)
                 {
@@ -34,16 +34,16 @@ namespace CatsAPI.Services
 
                 var newCat = new Cat
                 {
-                    CatId = apiCat.Id,
-                    Image = apiCat.Url,
-                    Width = apiCat.Width,
-                    Height = apiCat.Height,
-                    Created = DateTime.UtcNow
+                    CatId = cat.Id,
+                    Image = cat.Url,
+                    Width = cat.Width,
+                    Height = cat.Height,
+                    Created = DateTime.Now
                 };
 
-                if (apiCat.Breeds != null && apiCat.Breeds.Any())
+                if (cat.Breeds != null && cat.Breeds.Any())
                 {
-                    var temperament = apiCat.Breeds[0].Temperament;
+                    var temperament = cat.Breeds[0].Temperament;
 
                     if (!string.IsNullOrWhiteSpace(temperament))
                     {
@@ -63,7 +63,7 @@ namespace CatsAPI.Services
                                 existingTag = new Tag
                                 {
                                     Name = tagName,
-                                    Created = DateTime.UtcNow
+                                    Created = DateTime.Now
                                 };
                                 dbContext.Tags.Add(existingTag);
                             }

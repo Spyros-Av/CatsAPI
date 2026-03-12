@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using CatsAPI.Jobs;
 using CatsAPI.Models.DTO;
 using CatsAPI.Models.Entities;
 using CatsAPI.Services;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +15,21 @@ namespace CatsAPI.Controllers
     {
         private readonly ICatService catService;
         private readonly IMapper mapper;
+        private readonly IBackgroundJobClient backgroundJobClient;
+        private readonly IJobStatusService jobStatusService;
 
-        public CatsController(ICatService catService, IMapper mapper)
+        public CatsController(
+                ICatService catService,
+                IMapper mapper, 
+                IBackgroundJobClient backgroundJobClient, 
+                IJobStatusService jobStatusService)
         {
+
             this.catService = catService;
             this.mapper = mapper;
+            this.backgroundJobClient = backgroundJobClient;
+            this.jobStatusService = jobStatusService;
+
         }
 
         [HttpGet]
@@ -56,28 +68,18 @@ namespace CatsAPI.Controllers
         [HttpPost("fetch")]
         public async Task<IActionResult> FetchAsync()
         {
-            try
-            {
-                var savedCats = await catService.FetchAndSaveCatsAsync();
 
-            return CreatedAtAction(
-                nameof(GetAll),
-                new
-                {
-                    success = true,
-                    message = "Cats fetched successfully",
-                    newCatsAdded = savedCats
-                });
-            }
-            catch (Exception ex)
+            var jobId = Guid.NewGuid().ToString();
+            jobStatusService.CreateJob(jobId);
+            backgroundJobClient.Enqueue<CatFetchJob>(job => job.ExecuteAsync(jobId));
+          
+            return Accepted(new
             {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "Error fetching cats",
-                    error = ex.Message
-                });
-            }
+                jobId = jobId,
+                message = "Cat fetch job started",
+                statusUrl = $"/api/jobs/{jobId}"
+            });
         }
     }
 }
+
