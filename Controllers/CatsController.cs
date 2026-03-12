@@ -33,17 +33,22 @@ namespace CatsAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? tag, [FromQuery] int page = 1, [FromQuery] int pagesize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] GetCatsRequestDto getCatsRequestDto)
         {
-            var catEntity = new List<Cat>();
-
-            if (string.IsNullOrEmpty(tag))
+            if(!ModelState.IsValid)
             {
-                catEntity = await catService.GetAllAsync(page, pagesize);
+                return BadRequest(ModelState);
+            }
+
+            var catEntity = new List<Cat>(); 
+
+            if (string.IsNullOrEmpty(getCatsRequestDto.Tag))
+            {
+                catEntity = await catService.GetAllAsync(getCatsRequestDto.Page, getCatsRequestDto.PageSize);
             }
             else
             {
-                catEntity = await catService.GetByTagAsync(tag, page, pagesize);
+                catEntity = await catService.GetByTagAsync(getCatsRequestDto.Tag, getCatsRequestDto.Page, getCatsRequestDto.PageSize);
             }
 
             if (catEntity == null || catEntity.Count == 0)
@@ -54,8 +59,13 @@ namespace CatsAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetByIdAsync([FromRoute]int id)
+        public async Task<IActionResult> GetByIdAsync([FromRoute] int id)
         {
+            if (id <= 0)
+            {
+                return BadRequest(new { message = "Invalid cat ID. ID must be greater than 0." });
+            }
+
             var catEntity = await catService.GetByIdAsync(id);
 
             if (catEntity == null)
