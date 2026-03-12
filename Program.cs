@@ -13,7 +13,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Cats API",
+        Version = "v1",
+        Description = "API for fetching and managing cat images from TheCatAPI. Supports background job processing with Hangfire.\n\nContact: Spyros Avramiotis (spyros.avramiotis@outlook.com)"
+    });
+});
 
 builder.Services.AddDbContext<CatsDbContext>(options =>
  options.UseSqlServer(builder.Configuration.GetConnectionString("CatsAPIConnectionString")));
